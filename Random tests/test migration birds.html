@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migration Explorer</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f5f6f2;
+            color: #26352e;
+        }
+
+        header {
+            background-color: #244c3b;
+            color: white;
+            padding: 50px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 42px;
+        }
+
+        section {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #244c3b;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+
+        th, td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #dce7df;
+        }
+
+        tr:hover {
+            background-color: #edf2ee;
+        }
+
+        .intro {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .methods {
+            background-color: #e5ebe5;
+            padding: 25px;
+            border-radius: 8px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            background-color: #244c3b;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Migration Explorer</h1>
+        <p>Discover the fascinating journeys of migratory birds.</p>
+    </header>
+
+    <section>
+        <h2>About the project</h2>
+        <p class="intro">
+            Every year, millions of birds travel thousands of kilometres
+            between their breeding and wintering grounds.
+            Explore different migratory species and compare their journeys.
+        </p>
+    </section>
+
+    <section>
+        <h2>Explore migratory species</h2>
+
+        <div class="filters">
+            <select id="continentFilter">
+                <option value="all">All breeding areas</option>
+                <option value="Europe">Europe</option>
+                <option value="Arctic">Arctic</option>
+            </select>
+
+            <select id="distanceFilter">
+                <option value="all">All distances</option>
+                <option value="short">Under 10,000 km</option>
+                <option value="long">Over 10,000 km</option>
+            </select>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Species</th>
+                    <th>Breeding area</th>
+                    <th>Wintering area</th>
+                    <th>Distance (km)</th>
+                </tr>
+            </thead>
+
+            <tbody id="birdTable">
+                <tr data-continent="Europe" data-distance="10000">
+                    <td>Barn swallow</td>
+                    <td>Europe</td>
+                    <td>Africa</td>
+                    <td>10,000</td>
+                </tr>
+
+                <tr data-continent="Arctic" data-distance="35000">
+                    <td>Arctic tern</td>
+                    <td>Arctic</td>
+                    <td>Antarctica</td>
+                    <td>35,000</td>
+                </tr>
+
+                <tr data-continent="Europe" data-distance="5000">
+                    <td>White stork</td>
+                    <td>Europe</td>
+                    <td>Africa</td>
+                    <td>5,000</td>
+                </tr>
+
+                <tr data-continent="Europe" data-distance="8000">
+                    <td>Common cuckoo</td>
+                    <td>Europe</td>
+                    <td>Africa</td>
+                    <td>8,000</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>Migration distances</h2>
+        <p>
+            Compare the distances travelled by different migratory species.
+        </p>
+        <div id="chart">
+            Your interactive chart will appear here.
+        </div>
+    </section>
+
+    <section class="methods">
+        <h2>Methods & Sources</h2>
+        <p>
+            Migration distances are approximate estimates of the journeys
+            between breeding and wintering areas.
+            Values and geographical information should be checked
+            against scientific sources.
+        </p>
+    </section>
+
+    <footer>
+        <p>Migration Explorer | 2026</p>
+    </footer>
+
+    <script>
+        const continentFilter = document.getElementById("continentFilter");
+        const distanceFilter = document.getElementById("distanceFilter");
+        const rows = document.querySelectorAll("#birdTable tr");
+
+        function filterBirds() {
+            const continent = continentFilter.value;
+            const distance = distanceFilter.value;
+
+            rows.forEach(row => {
+                const birdContinent = row.dataset.continent;
+                const birdDistance = Number(row.dataset.distance);
+
+                const matchesContinent =
+                    continent === "all" || birdContinent === continent;
+
+                const matchesDistance =
+                    distance === "all" ||
+                    (distance === "short" && birdDistance < 10000) ||
+                    (distance === "long" && birdDistance >= 10000);
+
+                row.style.display =
+                    matchesContinent && matchesDistance ? "" : "none";
+            });
+        }
+
+        continentFilter.addEventListener("change", filterBirds);
+        distanceFilter.addEventListener("change", filterBirds);
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting Patterns in France</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Voting Patterns in France</h1>
+        <p>How did territories vote in the 2022 presidential election?</p>
+        <nav aria-label="Main navigation">
+            <a href="#catalogue">Results by territory</a>
+            <a href="#chart-section">Compare territories</a>
+            <a href="#methods">Understanding the numbers</a>
+            <a href="#more">More</a>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>Why this page ?</h2>
+            <p>On April 24, 2022, Emmanuel Macron and Marine Le Pen faced off in the presidential election. 
+                    Some areas of France voted overwhelmingly for one candidate, while others were more divided..
+    This page aims to compare these different voting patterns by region and department. </p>
+        </section>
+        <section id="catalogue">
+            <h2>Results by territory</h2>
+            <p>Choose a region to see its result, then refine with one of its departments.</p>
+            <form id="filter-form">
+                <div>
+                    <label for="region">Region</label>
+                    <select id="region" name="region">
+                        <option value="">All regions</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="department">Department</label>
+                    <select id="department" name="department" disabled>
+                        <option value="">All departments</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <a class="reset-link" href="#catalogue" id="reset-link">Reset</a>
+                </div>
+            </form>
+            <p id="status" role="status"></p>
+            <div id="summary" aria-live="polite"></div>
+        </section>
+        <section id="chart-section">
+            <h2>Compare territories</h2>
+            <p>Each bar shows the share of votes for Marine Le Pen. The territory you selected is highlighted, the others stay grey for comparison. Marine Le Pen’s and Emmanuel Macron’s shares always add up to 100%. Click a bar to select it.</p>
+            <h3 id="chart-heading"></h3>
+            <ol class="bars" id="chart-bars" aria-label="Share of votes for Marine Le Pen by territory"></ol>
+            <p class="note" id="chart-note"></p>
+        </section>
+        <section id="methods">
+            <h2>How to read these numbers ?</h2>
+            <dl>
+                <dt>Abstention</dt>
+                <dd>Percentage of registered voters who did not vote.</dd>
+                <dt>Blank and invalid votes</dt>
+                <dd>Percentage of voters whose ballots do not name any candidate.
+                    These ballots are not counted as votes cast.</dd>
+                <dt>Votes received by the candidates</dt>
+                <dd>Percentage of votes cast.
+                    In the second round, there are only two candidates, 
+                    so their combined total is always 100%.</dd>
+                <dt>Regions and All of France</dt>
+                <dd>These figures are recalculated by adding up the votes from
+                    all the departments in question. This is not the average of the percentages,
+                    because a highly populated department carries more weight than a small one.</dd>
+
+            </dl>
+        </section>
+        <section id="more">
+            <h2>Want to learn more about french politics ? </h2>
+            <dl>
+                <dt>How does French electoral system work?</dt>
+                <dd> &bull;  
+                     The French electoral system is a two-round majoritarian system : 
+                     <a href="https://www.elections.interieur.gouv.fr/comprendre-elections">Understanding the elections</a>,
+                     
+
+                    
+
+        </section>
+
+        </section>
+
+<script>
+    function vote(reponse) {
+        document.getElementById("resultat").textContent =
+            "You voted: " + reponse;
+    }
+</script>
+
+    </main>
+    <footer>
+        <p>Source : <a href="https://www.data.gouv.fr">French Government Official Data</a>, 
+            This website is for educational purposes only. 
+            </p>
+    </footer>
+    <script src="donnees.js"></script>
+    <script>
+const form = document.getElementById("filter-form");
+const selectRegion = document.getElementById("region");
+const selectDepartment = document.getElementById("department");
+const resetLink = document.getElementById("reset-link");
+const statusLine = document.getElementById("status");
+const summary = document.getElementById("summary");
+
+const percent = (part, total) => (part / total) * 100;
+const format = (value, digits = 1) => value.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+const sortByName = list => [...list].sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+
+
+function summarize(list) {
+    const sum = key => list.reduce((total, item) => total + item[key], 0);
+    const registered = sum("inscrits");
+    return {
+        inscrits: registered,
+        abstention: percent(sum("abst"), registered),
+        blancsNuls: percent(sum("blancs") + sum("nuls"), sum("votants")),
+        macron: percent(sum("macron"), sum("exprimes")),
+        lepen: percent(sum("lepen"), sum("exprimes"))
+    };
+}
+const FRANCE = summarize(DONNEES);
+
+function fillRegionMenu() {
+    const regions = [...new Set(DONNEES.map(item => item.region))].sort((a, b) => a.localeCompare(b, "fr"));
+    regions.forEach(region => {
+        const option = document.createElement("option");
+        option.value = region;
+        option.textContent = region;
+        selectRegion.appendChild(option);
+    });
+}
+
+function fillDepartmentMenu() {
+    selectDepartment.innerHTML = "";
+    const all = document.createElement("option");
+    all.value = "";
+    all.textContent = "Whole region";
+    selectDepartment.appendChild(all);
+    selectDepartment.disabled = !selectRegion.value;
+    if (!selectRegion.value) return;
+    sortByName(DONNEES.filter(item => item.region === selectRegion.value)).forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.code;
+        option.textContent = item.nom;
+        selectDepartment.appendChild(option);
+    });
+}
+
+function gap(value, reference, label) {
+    const diff = value - reference;
+    if (Math.abs(diff) < 0.05) return `the same as ${label}`;
+    return `${format(Math.abs(diff))} point${Math.abs(diff) >= 1.95 ? "s" : ""} ${diff > 0 ? "higher" : "lower"} than ${label}`;
+}
+
+function renderSummary(title, subtitle, current, columns) {
+    // columns: [{ nom, valeurs }] — the first one is the selected territory
+    const line = (label, key) => `<tr><td>${label}</td>` +
+        columns.map(c => `<td class="num">${format(c.valeurs[key])}%</td>`).join("") + "</tr>";
+    let sentence = "";
+    if (columns.length > 1) {
+        const parts = columns.slice(1).map(c => gap(current.abstention, c.valeurs.abstention, `the ${c.adjectif} average`));
+        sentence = `<p>Here, abstention is ${format(current.abstention)}%, which is ${parts.join(" and ")}.</p>`;
+    }
+    summary.innerHTML = `
+        <h3>${title}</h3>
+        <p class="note">${subtitle}</p>
+        <div class="bar" role="img" aria-label="Macron ${format(current.macron)}%, Le Pen ${format(current.lepen)}%">
+            <div class="macron" style="width:${current.macron}%">${format(current.macron)}%</div>
+            <div class="lepen" style="width:${current.lepen}%">${format(current.lepen)}%</div>
+        </div>
+        <div class="bar-legend"><span>Emmanuel Macron</span><span>Marine Le Pen</span></div>
+        <div class="table-container">
+        <table>
+            <thead><tr><th scope="col">Indicator</th>${columns.map(c => `<th scope="col" class="num">${c.nom}</th>`).join("")}</tr></thead>
+            <tbody>
+                ${line("Abstention (% of registered voters)", "abstention")}
+                ${line("Blank and invalid votes (% of voters)", "blancsNuls")}
+                ${line("Macron (% of votes cast)", "macron")}
+                ${line("Le Pen (% of votes cast)", "lepen")}
+            </tbody>
+        </table>
+        </div>
+        ${sentence}`;
+}
+
+const chartHeading = document.getElementById("chart-heading");
+const chartBars = document.getElementById("chart-bars");
+const chartNote = document.getElementById("chart-note");
+const AXIS_MAX = 80; // bars run from 0 to 80% of Le Pen votes
+
+function renderChart(region, code) {
+    let items, selectedKey, level;
+    if (code) {
+        level = "department";
+        selectedKey = code;
+        chartHeading.textContent = `Inside ${region}`;
+        items = DONNEES.filter(item => item.region === region)
+            .map(item => ({ key: item.code, label: item.nom, values: summarize([item]) }));
+    } else {
+        level = "region";
+        selectedKey = region;
+        chartHeading.textContent = "All regions";
+        items = [...new Set(DONNEES.map(item => item.region))]
+            .map(name => ({ key: name, label: name, values: summarize(DONNEES.filter(item => item.region === name)) }));
+    }
+    items.sort((a, b) => b.values.lepen - a.values.lepen);
+
+    const averageLeft = (FRANCE.lepen / AXIS_MAX) * 100;
+    chartBars.innerHTML = "";
+    items.forEach(item => {
+        const isSelected = item.key === selectedKey;
+        const fillClass = !selectedKey ? "is-all" : (isSelected ? "is-selected" : "");
+        const li = document.createElement("li");
+        li.innerHTML = `
+            <button type="button" class="bar-row" data-key="${item.key}" ${selectedKey ? `aria-pressed="${isSelected}"` : ""}>
+                <span class="bar-label ${isSelected ? "is-selected" : ""}">${item.label}</span>
+                <span class="track">
+                    <span class="fill ${fillClass}" style="width:${(item.values.lepen / AXIS_MAX) * 100}%"></span>
+                    <span class="avg" style="left:${averageLeft}%"></span>
+                </span>
+                <span class="bar-value">${format(item.values.lepen)}%</span>
+            </button>`;
+        li.querySelector("button").addEventListener("click", () => {
+            if (level === "region") {
+                selectRegion.value = item.key;
+                fillDepartmentMenu();
+            } else {
+                selectDepartment.value = item.key;
+            }
+            render();
+        });
+        chartBars.appendChild(li);
+    });
+    chartNote.textContent = `Bars run from 0 to ${AXIS_MAX}%. The dashed line is France as a whole (${format(FRANCE.lepen)}% for Marine Le Pen).`;
+}
+
+function nbPlaces(region, n) {
+    if (region === "Overseas territories") return `${n} territories`;
+    if (region.startsWith("French citizens")) return "voting from abroad";
+    return `${n} department${n > 1 ? "s" : ""}`;
+}
+
+function render() {
+    const region = selectRegion.value;
+    const code = selectDepartment.value;
+    const regionList = region ? DONNEES.filter(item => item.region === region) : DONNEES;
+    const department = code ? regionList.find(item => item.code === code) : null;
+    const shown = department ? [department] : regionList;
+
+    if (department) {
+        const dep = summarize([department]);
+        renderSummary(department.nom, `${dep.inscrits.toLocaleString("en-US")} registered voters · ${region}`, dep, [
+            { nom: "This department", valeurs: dep },
+            { nom: region, valeurs: summarize(regionList), adjectif: "regional" },
+            { nom: "All of France", valeurs: FRANCE, adjectif: "national" }
+        ]);
+    } else if (region) {
+        const reg = summarize(regionList);
+        renderSummary(region, `${reg.inscrits.toLocaleString("en-US")} registered voters · ${nbPlaces(region, regionList.length)}`, reg, [
+            { nom: "This region", valeurs: reg },
+            { nom: "All of France", valeurs: FRANCE, adjectif: "national" }
+        ]);
+    } else {
+        renderSummary("All of France", `${FRANCE.inscrits.toLocaleString("en-US")} registered voters`, FRANCE, [
+            { nom: "All of France", valeurs: FRANCE }
+        ]);
+    }
+
+    renderChart(region, code);
+
+    if (department) statusLine.textContent = `${department.nom}, compared with ${region} and all of France.`;
+    else if (region) statusLine.textContent = `${region}, compared with all of France. Choose a department to refine.`;
+    else statusLine.textContent = "Choose a region to see its result, then refine with one of its departments.";
+}
+
+selectRegion.addEventListener("change", () => { fillDepartmentMenu(); render(); });
+selectDepartment.addEventListener("change", render);
+form.addEventListener("submit", event => { event.preventDefault(); render(); });
+resetLink.addEventListener("click", event => {
+    event.preventDefault();
+    selectRegion.value = "";
+    fillDepartmentMenu();
+    render();
+});
+
+fillRegionMenu();
+fillDepartmentMenu();
+render();
+    </script>
+</body>
+</html>
