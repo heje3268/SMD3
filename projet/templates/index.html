@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voting Patterns in France</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href={{ url_for('static', filename="style.css") }}>
 </head>
 <body>
     <header>
@@ -101,7 +101,6 @@
             This website is for educational purposes only. 
             </p>
     </footer>
-    <script src="donnees.js"></script>
     <script>
 const form = document.getElementById("filter-form");
 const selectRegion = document.getElementById("region");
@@ -109,6 +108,7 @@ const selectDepartment = document.getElementById("department");
 const resetLink = document.getElementById("reset-link");
 const statusLine = document.getElementById("status");
 const summary = document.getElementById("summary");
+let DONNEES=[];
 
 const percent = (part, total) => (part / total) * 100;
 const format = (value, digits = 1) => value.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
@@ -126,7 +126,8 @@ function summarize(list) {
         lepen: percent(sum("lepen"), sum("exprimes"))
     };
 }
-const FRANCE = summarize(DONNEES);
+let FRANCE;
+
 
 function fillRegionMenu() {
     const regions = [...new Set(DONNEES.map(item => item.region))].sort((a, b) => a.localeCompare(b, "fr"));
@@ -291,9 +292,19 @@ resetLink.addEventListener("click", event => {
     render();
 });
 
-fillRegionMenu();
-fillDepartmentMenu();
-render();
+fetch("/api/donnees")
+    .then(response => response.json())
+    .then(data => {
+        DONNEES = data;
+        FRANCE = summarize(DONNEES);
+
+        fillRegionMenu();
+        fillDepartmentMenu();
+        render();
+    })
+    .catch(error => {
+        console.error("Erreur :", error);
+    });
     </script>
 </body>
-</html>
+</html
